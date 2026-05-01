@@ -9,8 +9,7 @@ export default function HomePage() {
           Manage team work with clarity.
         </h1>
         <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-          Authentication is ready. Project and task collaboration features will be added
-          step by step after each commit.
+          Authentication is ready.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link className="btn-primary" href="/signup">
