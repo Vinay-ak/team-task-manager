@@ -55,3 +55,19 @@ export async function getCurrentUser() {
 
   return data.user;
 }
+
+export async function authenticatedRequest(path, options = {}) {
+  const token = getToken();
+
+  if (!token) {
+    throw new Error("Please log in to continue");
+  }
+
+  return apiRequest(path, {
+    ...options,
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${token}`
+    }
+  });
+}

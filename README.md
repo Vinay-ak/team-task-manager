@@ -4,7 +4,7 @@ A MERN stack team task management application built progressively.
 
 ## Current Step
 
-Step 1 is implemented: JWT authentication with signup, login, password hashing, a protected `me` endpoint, and frontend login/signup screens.
+Step 2 is implemented: JWT authentication plus project creation, membership management, and project fetching for logged-in users.
 
 ## Project Structure
 
@@ -82,6 +82,50 @@ Requires:
 ```text
 Authorization: Bearer <token>
 ```
+
+### Projects
+
+All project routes require:
+
+```text
+Authorization: Bearer <token>
+```
+
+`GET /api/projects`
+
+Returns projects where the logged-in user is a member.
+
+`POST /api/projects`
+
+Body:
+
+```json
+{
+  "name": "Website Launch",
+  "description": "Plan and ship the launch work"
+}
+```
+
+The creator is automatically added as an `Admin`.
+
+`GET /api/projects/:projectId`
+
+Returns one project if the logged-in user is a member.
+
+`POST /api/projects/:projectId/members`
+
+Admin only. Body:
+
+```json
+{
+  "email": "teammate@example.com",
+  "role": "Member"
+}
+```
+
+`DELETE /api/projects/:projectId/members/:memberId`
+
+Admin only. Removes a member from the project.
 
 ## Railway Deployment Notes
 
