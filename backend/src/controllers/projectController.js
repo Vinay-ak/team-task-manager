@@ -1,12 +1,6 @@
 import Project from "../models/Project.js";
 import User from "../models/User.js";
 
-function isProjectAdmin(project, userId) {
-  return project.members.some(
-    (member) => member.user.toString() === userId.toString() && member.role === "Admin"
-  );
-}
-
 function serializeProject(project) {
   return {
     id: project._id,
@@ -56,17 +50,7 @@ export async function getMyProjects(req, res, next) {
 
 export async function getProjectById(req, res, next) {
   try {
-    const project = await Project.findOne({
-      _id: req.params.projectId,
-      "members.user": req.user._id
-    }).populate("members.user", "name email");
-
-    if (!project) {
-      res.status(404);
-      throw new Error("Project not found");
-    }
-
-    res.json({ project: serializeProject(project) });
+    res.json({ project: serializeProject(req.project) });
   } catch (error) {
     next(error);
   }
@@ -86,20 +70,7 @@ export async function addProjectMember(req, res, next) {
       throw new Error("Role must be Admin or Member");
     }
 
-    const project = await Project.findOne({
-      _id: req.params.projectId,
-      "members.user": req.user._id
-    });
-
-    if (!project) {
-      res.status(404);
-      throw new Error("Project not found");
-    }
-
-    if (!isProjectAdmin(project, req.user._id)) {
-      res.status(403);
-      throw new Error("Only project admins can add members");
-    }
+    const project = req.project;
 
     const userToAdd = await User.findOne({ email: email.toLowerCase().trim() });
 
@@ -109,7 +80,7 @@ export async function addProjectMember(req, res, next) {
     }
 
     const alreadyMember = project.members.some(
-      (member) => member.user.toString() === userToAdd._id.toString()
+      (member) => member.user._id.toString() === userToAdd._id.toString()
     );
 
     if (alreadyMember) {
@@ -130,20 +101,7 @@ export async function addProjectMember(req, res, next) {
 export async function removeProjectMember(req, res, next) {
   try {
     const { memberId } = req.params;
-    const project = await Project.findOne({
-      _id: req.params.projectId,
-      "members.user": req.user._id
-    });
-
-    if (!project) {
-      res.status(404);
-      throw new Error("Project not found");
-    }
-
-    if (!isProjectAdmin(project, req.user._id)) {
-      res.status(403);
-      throw new Error("Only project admins can remove members");
-    }
+    const project = req.project;
 
     if (project.createdBy.toString() === memberId) {
       res.status(400);
@@ -151,7 +109,7 @@ export async function removeProjectMember(req, res, next) {
     }
 
     const memberExists = project.members.some(
-      (member) => member.user.toString() === memberId
+      (member) => member.user._id.toString() === memberId
     );
 
     if (!memberExists) {
@@ -160,7 +118,7 @@ export async function removeProjectMember(req, res, next) {
     }
 
     project.members = project.members.filter(
-      (member) => member.user.toString() !== memberId
+      (member) => member.user._id.toString() !== memberId
     );
     await project.save();
 

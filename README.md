@@ -4,7 +4,7 @@ A MERN stack team task management application built progressively.
 
 ## Current Step
 
-Step 4 is implemented: JWT authentication, project management, task management, and dashboard analytics.
+Step 5 is implemented: JWT authentication, project management, task management, dashboard analytics, and backend role-based access control.
 
 ## Project Structure
 
@@ -49,6 +49,22 @@ npm run dev
 By default the frontend expects the backend at `http://localhost:5000/api`.
 
 ## API Documentation
+
+## Role-Based Access Control
+
+Project membership is loaded by backend middleware for project and task routes. Admin-only endpoints use a reusable `requireProjectAdmin` guard. Members can read project data and update the status of tasks assigned to them, but cannot create tasks, assign users, delete tasks, or manage project members.
+
+Permission summary:
+
+| Action | Admin | Member |
+| --- | --- | --- |
+| View project | Yes | Yes |
+| Add/remove members | Yes | No |
+| Create tasks | Yes | No |
+| Assign/reassign tasks | Yes | No |
+| Update task status when assigned | Yes | Yes |
+| Update task details | Yes | No |
+| Delete tasks | Yes | No |
 
 ### Auth
 

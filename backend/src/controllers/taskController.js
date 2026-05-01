@@ -1,29 +1,11 @@
-import Project from "../models/Project.js";
 import Task from "../models/Task.js";
+import {
+  requireMemberStatusOnlyUpdate,
+  requireTaskUpdatePermission
+} from "../middleware/rbacMiddleware.js";
 
 const allowedStatuses = ["To Do", "In Progress", "Done"];
 const allowedPriorities = ["Low", "Medium", "High"];
-
-async function getProjectMembership(projectId, userId) {
-  const project = await Project.findOne({
-    _id: projectId,
-    "members.user": userId
-  }).populate("members.user", "name email");
-
-  if (!project) {
-    return { project: null, membership: null };
-  }
-
-  const membership = project.members.find(
-    (member) => member.user._id.toString() === userId.toString()
-  );
-
-  return { project, membership };
-}
-
-function isAssignedToUser(task, userId) {
-  return task.assignedTo?.some((assignee) => assignee.toString() === userId.toString());
-}
 
 function assertAssigneesAreProjectMembers(project, assignedTo = []) {
   const memberIds = new Set(project.members.map((member) => member.user._id.toString()));
@@ -52,15 +34,7 @@ function serializeTask(task) {
 
 export async function getProjectTasks(req, res, next) {
   try {
-    const { project, membership } = await getProjectMembership(
-      req.params.projectId,
-      req.user._id
-    );
-
-    if (!project || !membership) {
-      res.status(404);
-      throw new Error("Project not found");
-    }
+    const project = req.project;
 
     const tasks = await Task.find({ project: project._id })
       .populate("assignedTo", "name email")
@@ -76,20 +50,7 @@ export async function getProjectTasks(req, res, next) {
 export async function createTask(req, res, next) {
   try {
     const { title, description = "", dueDate, priority = "Medium", assignedTo = [] } = req.body;
-    const { project, membership } = await getProjectMembership(
-      req.params.projectId,
-      req.user._id
-    );
-
-    if (!project || !membership) {
-      res.status(404);
-      throw new Error("Project not found");
-    }
-
-    if (membership.role !== "Admin") {
-      res.status(403);
-      throw new Error("Only project admins can create tasks");
-    }
+    const project = req.project;
 
     if (!title?.trim()) {
       res.status(400);
@@ -134,15 +95,7 @@ export async function createTask(req, res, next) {
 
 export async function updateTask(req, res, next) {
   try {
-    const { project, membership } = await getProjectMembership(
-      req.params.projectId,
-      req.user._id
-    );
-
-    if (!project || !membership) {
-      res.status(404);
-      throw new Error("Project not found");
-    }
+    const project = req.project;
 
     const task = await Task.findOne({
       _id: req.params.taskId,
@@ -154,23 +107,14 @@ export async function updateTask(req, res, next) {
       throw new Error("Task not found");
     }
 
-    const isAdmin = membership.role === "Admin";
-    const isAssignee = isAssignedToUser(task, req.user._id);
-
-    if (!isAdmin && !isAssignee) {
-      res.status(403);
-      throw new Error("You can only update tasks assigned to you");
-    }
+    const { isAdmin } = requireTaskUpdatePermission(
+      task,
+      req.user._id,
+      req.projectMembership
+    );
 
     if (!isAdmin) {
-      const requestedFields = Object.keys(req.body);
-      const canOnlyUpdateStatus =
-        requestedFields.length === 1 && requestedFields[0] === "status";
-
-      if (!canOnlyUpdateStatus) {
-        res.status(403);
-        throw new Error("Members can only update task status");
-      }
+      requireMemberStatusOnlyUpdate(req.body);
     }
 
     const { title, description, dueDate, priority, status, assignedTo } = req.body;
@@ -230,20 +174,7 @@ export async function updateTask(req, res, next) {
 
 export async function deleteTask(req, res, next) {
   try {
-    const { project, membership } = await getProjectMembership(
-      req.params.projectId,
-      req.user._id
-    );
-
-    if (!project || !membership) {
-      res.status(404);
-      throw new Error("Project not found");
-    }
-
-    if (membership.role !== "Admin") {
-      res.status(403);
-      throw new Error("Only project admins can delete tasks");
-    }
+    const project = req.project;
 
     const task = await Task.findOneAndDelete({
       _id: req.params.taskId,
