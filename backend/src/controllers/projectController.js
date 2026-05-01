@@ -1,5 +1,6 @@
 import Project from "../models/Project.js";
 import User from "../models/User.js";
+import { logActivity } from "../utils/activityLogger.js";
 
 function serializeProject(project) {
   return {
@@ -91,6 +92,19 @@ export async function addProjectMember(req, res, next) {
     project.members.push({ user: userToAdd._id, role });
     await project.save();
 
+    await logActivity({
+      project: project._id,
+      user: req.user._id,
+      action: "member_added",
+      referenceId: userToAdd._id,
+      referenceType: "User",
+      metadata: {
+        memberName: userToAdd.name,
+        memberEmail: userToAdd.email,
+        role
+      }
+    });
+
     const populatedProject = await project.populate("members.user", "name email");
     res.json({ project: serializeProject(populatedProject) });
   } catch (error) {
@@ -108,11 +122,11 @@ export async function removeProjectMember(req, res, next) {
       throw new Error("The project creator cannot be removed");
     }
 
-    const memberExists = project.members.some(
+    const memberToRemove = project.members.find(
       (member) => member.user._id.toString() === memberId
     );
 
-    if (!memberExists) {
+    if (!memberToRemove) {
       res.status(404);
       throw new Error("Member not found on this project");
     }
@@ -121,6 +135,19 @@ export async function removeProjectMember(req, res, next) {
       (member) => member.user._id.toString() !== memberId
     );
     await project.save();
+
+    await logActivity({
+      project: project._id,
+      user: req.user._id,
+      action: "member_removed",
+      referenceId: memberToRemove.user._id,
+      referenceType: "User",
+      metadata: {
+        memberName: memberToRemove.user.name,
+        memberEmail: memberToRemove.user.email,
+        role: memberToRemove.role
+      }
+    });
 
     const populatedProject = await project.populate("members.user", "name email");
     res.json({ project: serializeProject(populatedProject) });

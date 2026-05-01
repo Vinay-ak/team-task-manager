@@ -3,6 +3,7 @@ import express from "express";
 import morgan from "morgan";
 
 import authRoutes from "./routes/authRoutes.js";
+import activityLogRoutes from "./routes/activityLogRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
@@ -26,6 +27,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/projects/:projectId/activity", activityLogRoutes);
 app.use("/api/projects/:projectId/tasks", taskRoutes);
 
 app.use(notFound);

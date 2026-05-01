@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { getCurrentUser, logout } from "../../../lib/auth";
+import { getActivityLogs } from "../../../lib/activity";
 import {
   addProjectMember,
   getProject,
@@ -23,12 +24,20 @@ const emptyTaskForm = {
   assignedTo: []
 };
 
+function formatAction(action) {
+  return action
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
   const [memberForm, setMemberForm] = useState({ email: "", role: "Member" });
   const [taskForm, setTaskForm] = useState(emptyTaskForm);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,14 +57,16 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     async function loadProject() {
       try {
-        const [currentUser, currentProject, currentTasks] = await Promise.all([
+        const [currentUser, currentProject, currentTasks, logs] = await Promise.all([
           getCurrentUser(),
           getProject(projectId),
-          getTasks(projectId)
+          getTasks(projectId),
+          getActivityLogs(projectId)
         ]);
         setUser(currentUser);
         setProject(currentProject);
         setTasks(currentTasks);
+        setActivityLogs(logs);
       } catch (err) {
         setError(err.message);
         if (err.message.toLowerCase().includes("log in")) {
@@ -93,6 +104,11 @@ export default function ProjectDetailsPage() {
     });
   }
 
+  async function refreshActivity() {
+    const logs = await getActivityLogs(projectId);
+    setActivityLogs(logs);
+  }
+
   async function handleAddMember(event) {
     event.preventDefault();
     setError("");
@@ -102,6 +118,7 @@ export default function ProjectDetailsPage() {
       const updatedProject = await addProjectMember(projectId, memberForm);
       setProject(updatedProject);
       setMemberForm({ email: "", role: "Member" });
+      await refreshActivity();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -124,6 +141,7 @@ export default function ProjectDetailsPage() {
           )
         }))
       );
+      await refreshActivity();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -140,6 +158,7 @@ export default function ProjectDetailsPage() {
       const task = await createTask(projectId, taskForm);
       setTasks((current) => [task, ...current]);
       setTaskForm(emptyTaskForm);
+      await refreshActivity();
     } catch (err) {
       setTaskError(err.message);
     } finally {
@@ -156,6 +175,7 @@ export default function ProjectDetailsPage() {
       setTasks((current) =>
         current.map((item) => (item.id === updatedTask.id ? updatedTask : item))
       );
+      await refreshActivity();
     } catch (err) {
       setTaskError(err.message);
     } finally {
@@ -172,6 +192,7 @@ export default function ProjectDetailsPage() {
       setTasks((current) =>
         current.map((item) => (item.id === updatedTask.id ? updatedTask : item))
       );
+      await refreshActivity();
     } catch (err) {
       setTaskError(err.message);
     } finally {
@@ -195,6 +216,7 @@ export default function ProjectDetailsPage() {
       setTasks((current) =>
         current.map((item) => (item.id === updatedTask.id ? updatedTask : item))
       );
+      await refreshActivity();
     } catch (err) {
       setTaskError(err.message);
     } finally {
@@ -452,6 +474,35 @@ export default function ProjectDetailsPage() {
                   </div>
                 );
               })}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-950">Activity</h2>
+              <div className="mt-5 divide-y divide-slate-200">
+                {activityLogs.length ? (
+                  activityLogs.map((log) => (
+                    <div className="py-4 first:pt-0 last:pb-0" key={log.id}>
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="font-medium text-slate-950">
+                            {formatAction(log.action)}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-600">
+                            {log.user?.name || "Someone"}{" "}
+                            {log.metadata?.title ? `on "${log.metadata.title}"` : ""}
+                            {log.metadata?.memberName ? `: ${log.metadata.memberName}` : ""}
+                          </p>
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-600">No activity yet.</p>
+                )}
               </div>
             </div>
           </section>
