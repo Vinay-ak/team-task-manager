@@ -1,3 +1,4 @@
+import Comment from "../models/Comment.js";
 import Task from "../models/Task.js";
 import {
   requireMemberStatusOnlyUpdate,
@@ -284,6 +285,8 @@ export async function deleteTask(req, res, next) {
         title: task.title
       }
     });
+
+    await Comment.deleteMany({ task: task._id });
 
     res.json({ message: "Task deleted" });
   } catch (error) {

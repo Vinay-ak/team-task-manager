@@ -4,6 +4,7 @@ import morgan from "morgan";
 
 import authRoutes from "./routes/authRoutes.js";
 import activityLogRoutes from "./routes/activityLogRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
@@ -28,6 +29,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/projects/:projectId/activity", activityLogRoutes);
+app.use("/api/projects/:projectId/comments", commentRoutes);
 app.use("/api/projects/:projectId/tasks", taskRoutes);
 
 app.use(notFound);

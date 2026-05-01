@@ -4,7 +4,7 @@ A MERN stack team task management application built progressively.
 
 ## Current Step
 
-Step 6 is implemented: JWT authentication, project management, task management, dashboard analytics, backend role-based access control, and project activity logs.
+Step 7 is implemented: JWT authentication, project management, task management, dashboard analytics, backend role-based access control, project activity logs, and task comments.
 
 ## Project Structure
 
@@ -79,9 +79,28 @@ task_created
 task_updated
 task_assigned
 task_deleted
+comment_added
 member_added
 member_removed
 ```
+
+### Comments
+
+`GET /api/projects/:projectId/comments`
+
+Requires project membership. Returns all comments for tasks in the project.
+
+`POST /api/projects/:projectId/comments/tasks/:taskId`
+
+Requires project membership. Body:
+
+```json
+{
+  "message": "I pushed the first draft for review."
+}
+```
+
+Comments store `user`, `message`, `timestamp`, project, and task references.
 
 ### Auth
 

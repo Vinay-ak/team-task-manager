@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { getCurrentUser, logout } from "../../../lib/auth";
 import { getActivityLogs } from "../../../lib/activity";
+import { addComment, getComments } from "../../../lib/comments";
 import {
   addProjectMember,
   getProject,
@@ -37,14 +38,18 @@ export default function ProjectDetailsPage() {
   const [user, setUser] = useState(null);
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [comments, setComments] = useState([]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [memberForm, setMemberForm] = useState({ email: "", role: "Member" });
   const [taskForm, setTaskForm] = useState(emptyTaskForm);
+  const [commentForms, setCommentForms] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTaskSaving, setIsTaskSaving] = useState(false);
+  const [isCommentSaving, setIsCommentSaving] = useState(false);
   const [error, setError] = useState("");
   const [taskError, setTaskError] = useState("");
+  const [commentError, setCommentError] = useState("");
 
   const currentMembership = useMemo(() => {
     return project?.members.find(
@@ -57,16 +62,18 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     async function loadProject() {
       try {
-        const [currentUser, currentProject, currentTasks, logs] = await Promise.all([
+        const [currentUser, currentProject, currentTasks, logs, currentComments] = await Promise.all([
           getCurrentUser(),
           getProject(projectId),
           getTasks(projectId),
-          getActivityLogs(projectId)
+          getActivityLogs(projectId),
+          getComments(projectId)
         ]);
         setUser(currentUser);
         setProject(currentProject);
         setTasks(currentTasks);
         setActivityLogs(logs);
+        setComments(currentComments);
       } catch (err) {
         setError(err.message);
         if (err.message.toLowerCase().includes("log in")) {
@@ -102,6 +109,10 @@ export default function ProjectDetailsPage() {
           : [...current.assignedTo, userId]
       };
     });
+  }
+
+  function updateCommentField(taskId, value) {
+    setCommentForms((current) => ({ ...current, [taskId]: value }));
   }
 
   async function refreshActivity() {
@@ -231,10 +242,29 @@ export default function ProjectDetailsPage() {
     try {
       await deleteTask(projectId, taskId);
       setTasks((current) => current.filter((task) => task.id !== taskId));
+      setComments((current) => current.filter((comment) => comment.task !== taskId));
+      await refreshActivity();
     } catch (err) {
       setTaskError(err.message);
     } finally {
       setIsTaskSaving(false);
+    }
+  }
+
+  async function handleAddComment(event, taskId) {
+    event.preventDefault();
+    setCommentError("");
+    setIsCommentSaving(true);
+
+    try {
+      const comment = await addComment(projectId, taskId, commentForms[taskId] || "");
+      setComments((current) => [...current, comment]);
+      setCommentForms((current) => ({ ...current, [taskId]: "" }));
+      await refreshActivity();
+    } catch (err) {
+      setCommentError(err.message);
+    } finally {
+      setIsCommentSaving(false);
     }
   }
 
@@ -249,6 +279,12 @@ export default function ProjectDetailsPage() {
     status,
     tasks: tasks.filter((task) => task.status === status)
   }));
+
+  const commentsByTask = comments.reduce((groups, comment) => {
+    const taskId = comment.task?.id || comment.task?._id || comment.task;
+    groups[taskId] = [...(groups[taskId] || []), comment];
+    return groups;
+  }, {});
 
   if (isLoading) {
     return <main className="center-shell">Loading project...</main>;
@@ -430,6 +466,63 @@ export default function ProjectDetailsPage() {
                                   </button>
                                 ) : null}
                               </div>
+
+                              <div className="mt-5 border-t border-slate-200 pt-4">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="text-xs font-semibold text-slate-700">
+                                    Comments
+                                  </p>
+                                  <span className="text-xs text-slate-500">
+                                    {(commentsByTask[task.id] || []).length}
+                                  </span>
+                                </div>
+
+                                <div className="mt-3 space-y-3">
+                                  {(commentsByTask[task.id] || []).length ? (
+                                    commentsByTask[task.id].map((comment) => (
+                                      <div
+                                        className="rounded-md bg-slate-50 p-3"
+                                        key={comment.id}
+                                      >
+                                        <div className="flex items-start justify-between gap-2">
+                                          <p className="text-xs font-medium text-slate-800">
+                                            {comment.user?.name || "Someone"}
+                                          </p>
+                                          <span className="text-[11px] text-slate-500">
+                                            {new Date(comment.timestamp).toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                        <p className="mt-2 text-xs leading-5 text-slate-600">
+                                          {comment.message}
+                                        </p>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <p className="text-xs text-slate-500">No comments yet.</p>
+                                  )}
+                                </div>
+
+                                <form
+                                  className="mt-3 space-y-2"
+                                  onSubmit={(event) => handleAddComment(event, task.id)}
+                                >
+                                  <textarea
+                                    className="text-input mt-0 min-h-20 resize-y text-xs"
+                                    onChange={(event) =>
+                                      updateCommentField(task.id, event.target.value)
+                                    }
+                                    placeholder="Add a comment"
+                                    value={commentForms[task.id] || ""}
+                                  />
+                                  <button
+                                    className="btn-secondary h-9 w-full"
+                                    disabled={isCommentSaving}
+                                    type="submit"
+                                  >
+                                    {isCommentSaving ? "Adding..." : "Add comment"}
+                                  </button>
+                                </form>
+                              </div>
                             </article>
                           );
                         })
@@ -439,6 +532,12 @@ export default function ProjectDetailsPage() {
                 ))}
               </div>
             </div>
+
+            {commentError ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {commentError}
+              </div>
+            ) : null}
 
             <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-950">Members</h2>
