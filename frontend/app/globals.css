@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #020617;
+}
+
+@layer components {
+  .center-shell {
+    @apply grid min-h-screen place-items-center bg-slate-50 px-6 text-center text-sm text-slate-600;
+  }
+
+  .auth-shell {
+    @apply grid min-h-screen place-items-center bg-slate-50 px-6 py-10;
+  }
+
+  .auth-card {
+    @apply w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm;
+  }
+
+  .input-label {
+    @apply text-sm font-medium text-slate-700;
+  }
+
+  .text-input {
+    @apply mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-slate-950 focus:ring-2 focus:ring-slate-200;
+  }
+
+  .btn-primary {
+    @apply inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400;
+  }
+
+  .btn-secondary {
+    @apply inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 transition hover:bg-slate-100;
+  }
+}
