@@ -1,12 +1,103 @@
-# Team Task Manager
+# 🚀 Team Task Manager
 
-A MERN stack team task management application built progressively.
+A full-stack Team Task Management Web Application built using the MERN stack.
+This application allows teams to collaborate by managing projects, assigning tasks, tracking progress, and maintaining activity logs.
 
-## Current Step
+---
 
-Step 7 is implemented: JWT authentication, project management, task management, dashboard analytics, backend role-based access control, project activity logs, and task comments.
+## 📌 Features
 
-## Project Structure
+### 🔐 Authentication
+
+* User signup & login with secure JWT authentication
+* Protected API routes
+* Persistent session handling
+
+---
+
+### 📁 Project Management
+
+* Create and manage projects
+* Project creator becomes **Admin**
+* Admin can:
+
+  * Add/remove members
+  * Assign roles
+* Members can view assigned projects
+
+---
+
+### 📝 Task Management
+
+* Create tasks with:
+
+  * Title, Description
+  * Due Date
+  * Priority
+* Assign tasks to team members
+* Update task status:
+
+  * To Do
+  * In Progress
+  * Done
+
+---
+
+### 📊 Dashboard
+
+* Total number of tasks
+* Tasks grouped by status
+* Tasks per user
+* Overdue tasks tracking
+
+---
+
+### 🔒 Role-Based Access Control
+
+| Action                      | Admin | Member |
+| --------------------------- | ----- | ------ |
+| View project                | ✅     | ✅      |
+| Add/remove members          | ✅     | ❌      |
+| Create tasks                | ✅     | ❌      |
+| Assign tasks                | ✅     | ❌      |
+| Update assigned task status | ✅     | ✅      |
+| Update task details         | ✅     | ❌      |
+| Delete tasks                | ✅     | ❌      |
+
+---
+
+### 🧠 Activity Log (Standout Feature)
+
+Tracks important actions within a project:
+
+* Task created, updated, assigned, deleted
+* Member added/removed
+* Comments added
+
+---
+
+### 💬 Comments System (Standout Feature)
+
+* Add comments to tasks
+* Each comment stores:
+
+  * User
+  * Message
+  * Timestamp
+
+---
+
+## 🏗️ Tech Stack
+
+* **Frontend:** Next.js + Tailwind CSS
+* **Backend:** Node.js + Express.js
+* **Database:** MongoDB (Mongoose)
+* **Authentication:** JWT
+* **Deployment:** Railway
+
+---
+
+## 📂 Project Structure
 
 ```text
 team-task-manager/
@@ -24,89 +115,59 @@ team-task-manager/
     lib/
 ```
 
-## Setup
+---
 
-### Backend
+## ⚙️ Setup Instructions
+
+### 1️⃣ Clone Repository
+
+```bash
+git clone <your-repo-url>
+cd team-task-manager
+```
+
+---
+
+### 2️⃣ Backend Setup
 
 ```bash
 cd backend
 npm install
-copy .env.example .env
+cp .env.example .env
 npm run dev
 ```
 
-Set `MONGODB_URI` and `JWT_SECRET` in `backend/.env`.
+Update `.env`:
 
-### Frontend
+```env
+MONGODB_URI=your_mongodb_uri
+JWT_SECRET=your_secret
+```
+
+---
+
+### 3️⃣ Frontend Setup
 
 ```bash
 cd frontend
 npm install
-copy .env.example .env.local
+cp .env.example .env.local
 npm run dev
 ```
 
-By default the frontend expects the backend at `http://localhost:5000/api`.
+Default API URL:
 
-## API Documentation
-
-## Role-Based Access Control
-
-Project membership is loaded by backend middleware for project and task routes. Admin-only endpoints use a reusable `requireProjectAdmin` guard. Members can read project data and update the status of tasks assigned to them, but cannot create tasks, assign users, delete tasks, or manage project members.
-
-Permission summary:
-
-| Action | Admin | Member |
-| --- | --- | --- |
-| View project | Yes | Yes |
-| Add/remove members | Yes | No |
-| Create tasks | Yes | No |
-| Assign/reassign tasks | Yes | No |
-| Update task status when assigned | Yes | Yes |
-| Update task details | Yes | No |
-| Delete tasks | Yes | No |
-
-### Activity Logs
-
-`GET /api/projects/:projectId/activity`
-
-Requires project membership.
-
-Returns the latest 50 activity records for a project. Logged actions include:
-
-```text
-task_created
-task_updated
-task_assigned
-task_deleted
-comment_added
-member_added
-member_removed
+```
+http://localhost:5000/api
 ```
 
-### Comments
+---
 
-`GET /api/projects/:projectId/comments`
+## 🔗 API Documentation
 
-Requires project membership. Returns all comments for tasks in the project.
+### 🔐 Auth Routes
 
-`POST /api/projects/:projectId/comments/tasks/:taskId`
-
-Requires project membership. Body:
-
-```json
-{
-  "message": "I pushed the first draft for review."
-}
-```
-
-Comments store `user`, `message`, `timestamp`, project, and task references.
-
-### Auth
-
-`POST /api/auth/signup`
-
-Body:
+**POST** `/api/auth/signup`
 
 ```json
 {
@@ -116,120 +177,83 @@ Body:
 }
 ```
 
-`POST /api/auth/login`
+**POST** `/api/auth/login`
 
-Body:
-
-```json
-{
-  "email": "ada@example.com",
-  "password": "password123"
-}
-```
-
-`GET /api/auth/me`
-
+**GET** `/api/auth/me`
 Requires:
 
-```text
+```
 Authorization: Bearer <token>
 ```
 
-### Projects
+---
 
-All project routes require:
+### 📁 Project Routes
 
-```text
-Authorization: Bearer <token>
-```
+**GET** `/api/projects`
+→ Fetch user projects
 
-`GET /api/projects`
+**POST** `/api/projects`
+→ Create project
 
-Returns projects where the logged-in user is a member.
+**POST** `/api/projects/:projectId/members`
+→ Add member (Admin only)
 
-`POST /api/projects`
+**DELETE** `/api/projects/:projectId/members/:memberId`
+→ Remove member (Admin only)
 
-Body:
+---
 
-```json
-{
-  "name": "Website Launch",
-  "description": "Plan and ship the launch work"
-}
-```
+### 📝 Task Routes
 
-The creator is automatically added as an `Admin`.
+**GET** `/api/projects/:projectId/tasks`
 
-`GET /api/projects/:projectId`
+**POST** `/api/projects/:projectId/tasks`
+→ Admin only
 
-Returns one project if the logged-in user is a member.
+**PATCH** `/api/projects/:projectId/tasks/:taskId`
+→ Members can update only assigned task status
 
-`POST /api/projects/:projectId/members`
+**DELETE** `/api/projects/:projectId/tasks/:taskId`
+→ Admin only
 
-Admin only. Body:
+---
 
-```json
-{
-  "email": "teammate@example.com",
-  "role": "Member"
-}
-```
+### 💬 Comments
 
-`DELETE /api/projects/:projectId/members/:memberId`
+**GET** `/api/projects/:projectId/comments`
 
-Admin only. Removes a member from the project.
-
-### Tasks
-
-All task routes require project membership and:
-
-```text
-Authorization: Bearer <token>
-```
-
-`GET /api/projects/:projectId/tasks`
-
-Returns tasks for a project.
-
-`POST /api/projects/:projectId/tasks`
-
-Admin only. Body:
+**POST** `/api/projects/:projectId/comments/tasks/:taskId`
 
 ```json
 {
-  "title": "Draft launch plan",
-  "description": "Create the initial rollout checklist",
-  "dueDate": "2026-05-20",
-  "priority": "High",
-  "assignedTo": ["userId"]
+  "message": "I pushed the first draft for review."
 }
 ```
 
-`PATCH /api/projects/:projectId/tasks/:taskId`
+---
 
-Admins can update any task fields. Members can only update `status` for tasks assigned to them.
+### 🧠 Activity Logs
 
-```json
-{
-  "status": "In Progress"
-}
+**GET** `/api/projects/:projectId/activity`
+
+Returns latest activity including:
+
+```
+task_created
+task_updated
+task_assigned
+task_deleted
+comment_added
+member_added
+member_removed
 ```
 
-`DELETE /api/projects/:projectId/tasks/:taskId`
+---
 
-Admin only.
+### 📊 Dashboard
 
-### Dashboard
-
-`GET /api/dashboard`
-
-Requires:
-
-```text
-Authorization: Bearer <token>
-```
-
-Returns:
+**GET** `/api/dashboard`
 
 ```json
 {
@@ -247,31 +271,60 @@ Returns:
 }
 ```
 
-## Railway Deployment Notes
+---
 
-Create separate Railway services for `backend` and `frontend`.
+## 🚀 Deployment (Railway)
 
-Backend variables:
+### Backend Environment Variables
 
-```text
-MONGODB_URI=<your MongoDB connection string>
-JWT_SECRET=<strong secret>
+```env
+MONGODB_URI=<MongoDB URI>
+JWT_SECRET=<secret>
 CLIENT_URL=<frontend URL>
 NODE_ENV=production
 ```
 
-Frontend variables:
+### Frontend Environment Variables
 
-```text
+```env
 NEXT_PUBLIC_API_URL=<backend URL>/api
 ```
 
-## Planned Commit History
+---
 
-1. `implement authentication with JWT`
-2. `implement project management features`
-3. `implement task management system`
-4. `build dashboard analytics`
-5. `add role-based access control`
-6. `implement activity log system`
-7. `add task comments feature`
+## 🧪 Future Improvements
+
+* Real-time updates (WebSockets)
+* Notifications system
+* Drag-and-drop task board (Kanban)
+* File attachments for tasks
+
+---
+
+## 📜 Commit History (Development Flow)
+
+* feat: implement authentication with JWT
+* feat: implement project management features
+* feat: implement task management system
+* feat: build dashboard analytics
+* feat: add role-based access control
+* feat: implement activity log system
+* feat: add task comments feature
+
+---
+
+## 🎥 Demo
+
+👉 *(Add your demo video link here)*
+
+---
+
+## 🌐 Live Application
+
+👉 *(Add your deployed Railway link here)*
+
+---
+
+## 👨‍💻 Author
+
+Developed as part of a full-stack assessment project.
