@@ -4,7 +4,7 @@ A MERN stack team task management application built progressively.
 
 ## Current Step
 
-Step 3 is implemented: JWT authentication, project management, and task management with assignment and status updates.
+Step 4 is implemented: JWT authentication, project management, task management, and dashboard analytics.
 
 ## Project Structure
 
@@ -166,6 +166,34 @@ Admins can update any task fields. Members can only update `status` for tasks as
 `DELETE /api/projects/:projectId/tasks/:taskId`
 
 Admin only.
+
+### Dashboard
+
+`GET /api/dashboard`
+
+Requires:
+
+```text
+Authorization: Bearer <token>
+```
+
+Returns:
+
+```json
+{
+  "analytics": {
+    "totalProjects": 2,
+    "totalTasks": 8,
+    "tasksByStatus": {
+      "To Do": 3,
+      "In Progress": 2,
+      "Done": 3
+    },
+    "tasksPerUser": [],
+    "overdueTasks": []
+  }
+}
+```
 
 ## Railway Deployment Notes
 
