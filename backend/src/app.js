@@ -11,10 +11,18 @@ import taskRoutes from "./routes/taskRoutes.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
 const app = express();
+const clientUrl = (process.env.CLIENT_URL || "http://localhost:3000").replace(/\/$/, "");
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin(origin, callback) {
+      if (!origin || origin.replace(/\/$/, "") === clientUrl) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true
   })
 );

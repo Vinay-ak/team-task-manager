@@ -1,4 +1,7 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(
+  /\/$/,
+  ""
+);
 
 export async function apiRequest(path, options = {}) {
   const headers = new Headers(options.headers);
